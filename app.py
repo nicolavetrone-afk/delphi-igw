@@ -40,7 +40,6 @@ KPIS = {
             "emissiva dell'impresa è migliorata o peggiorata nel tempo."
         ),
     },
-
     "E2": {
         "area": "ENVIRONMENTAL",
         "nome": "Tasso di efficacia idrica",
@@ -51,7 +50,6 @@ KPIS = {
             "peggioramento dell'impresa nella gestione della risorsa idrica."
         ),
     },
-
     "E3": {
         "area": "ENVIRONMENTAL",
         "nome": "Quota di energia rinnovabile",
@@ -61,7 +59,6 @@ KPIS = {
             "dell'impresa coperta da energia proveniente da fonti rinnovabili."
         ),
     },
-
     "E4": {
         "area": "ENVIRONMENTAL",
         "nome": "Tasso di circolarità dei rifiuti",
@@ -72,7 +69,6 @@ KPIS = {
             "smaltimento."
         ),
     },
-
     "E5": {
         "area": "SUPPLY CHAIN ESG",
         "nome": "Copertura della valutazione di sostenibilità/ESG dei fornitori",
@@ -85,7 +81,6 @@ KPIS = {
             "di fornitura."
         ),
     },
-
     "S1": {
         "area": "SOCIAL",
         "nome": "Ore medie di formazione per dipendente",
@@ -96,7 +91,6 @@ KPIS = {
             "e nell'aggiornamento delle competenze del personale."
         ),
     },
-
     "GS2": {
         "area": "SOCIAL",
         "nome": "Rappresentanza femminile nella workforce",
@@ -638,9 +632,6 @@ if "ratings" not in st.session_state:
 if "weights" not in st.session_state:
     st.session_state.weights = {}
 
-if "invio_in_corso" not in st.session_state:
-    st.session_state.invio_in_corso = False
-
 
 # ============================================================
 # FUNZIONI
@@ -661,11 +652,7 @@ def section_header(code, title, description):
         f'<div class="section-heading">{title}</div>'
         f'<div class="section-description">{description}</div>'
     )
-
-    st.markdown(
-        html,
-        unsafe_allow_html=True,
-    )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def show_progress(current):
@@ -725,25 +712,25 @@ def save_weight(codice):
         st.session_state.weights[codice] = int(value)
 
 
-def sincronizza_ratings():
+def sync_ratings():
 
     for codice in KPIS:
 
-        widget_key = f"rating_widget_{codice}"
-
-        value = st.session_state.get(widget_key)
+        value = st.session_state.get(
+            f"rating_widget_{codice}"
+        )
 
         if value is not None:
             st.session_state.ratings[codice] = int(value)
 
 
-def sincronizza_weights():
+def sync_weights():
 
     for codice in KPIS:
 
-        widget_key = f"weight_widget_{codice}"
-
-        value = st.session_state.get(widget_key)
+        value = st.session_state.get(
+            f"weight_widget_{codice}"
+        )
 
         if value is not None:
             st.session_state.weights[codice] = int(value)
@@ -755,16 +742,13 @@ def salva_risposta():
         "ambiti": "; ".join(
             st.session_state.get("ambiti", [])
         ),
-
         "anni_esperienza": st.session_state.get(
             "anni",
             "",
         ),
-
         "familiarita_esg": st.session_state.get(
             "familiarita"
         ),
-
         "esperienza_automotive": st.session_state.get(
             "automotive",
             "",
@@ -870,22 +854,18 @@ if st.session_state.page == 0 and not st.session_state.submitted:
     info_html = (
         '<div class="info-panel">'
         '<div class="info-grid">'
-
         '<div>'
         '<div class="info-value">5–7</div>'
         '<div class="info-label">MINUTI STIMATI</div>'
         '</div>'
-
         '<div>'
         '<div class="info-value">7</div>'
         '<div class="info-label">KPI DA VALUTARE</div>'
         '</div>'
-
         '<div>'
         '<div class="info-value">1–5</div>'
         '<div class="info-label">SCALA DI RILEVANZA</div>'
         '</div>'
-
         '</div>'
         '</div>'
     )
@@ -999,6 +979,7 @@ elif st.session_state.page == 1 and not st.session_state.submitted:
             "← Indietro",
             use_container_width=True,
         ):
+
             go_to(0)
 
     with col2:
@@ -1065,32 +1046,26 @@ elif st.session_state.page == 2 and not st.session_state.submitted:
 
     scale_html = (
         '<div class="scale-card">'
-
         '<div class="scale-row">'
         '<div class="scale-number">1</div>'
         '<div class="scale-text">Per nulla rilevante</div>'
         '</div>'
-
         '<div class="scale-row">'
         '<div class="scale-number">2</div>'
         '<div class="scale-text">Poco rilevante</div>'
         '</div>'
-
         '<div class="scale-row">'
         '<div class="scale-number">3</div>'
         '<div class="scale-text">Moderatamente rilevante</div>'
         '</div>'
-
         '<div class="scale-row">'
         '<div class="scale-number">4</div>'
         '<div class="scale-text">Molto rilevante</div>'
         '</div>'
-
         '<div class="scale-row">'
         '<div class="scale-number">5</div>'
         '<div class="scale-text">Estremamente rilevante</div>'
         '</div>'
-
         '</div>'
     )
 
@@ -1148,7 +1123,8 @@ elif st.session_state.page == 2 and not st.session_state.submitted:
             "← Indietro",
             use_container_width=True,
         ):
-            sincronizza_ratings()
+
+            sync_ratings()
             go_to(1)
 
     with col2:
@@ -1159,12 +1135,12 @@ elif st.session_state.page == 2 and not st.session_state.submitted:
             use_container_width=True,
         ):
 
-            sincronizza_ratings()
+            sync_ratings()
 
             missing = [
                 codice
                 for codice in KPIS
-                if st.session_state.ratings.get(codice) is None
+                if st.session_state.ratings.get(codice) not in LIKERT
             ]
 
             if missing:
@@ -1252,7 +1228,7 @@ elif st.session_state.page == 3 and not st.session_state.submitted:
                 args=(codice,),
             )
 
-    sincronizza_weights()
+    sync_weights()
 
     total = sum(
         st.session_state.weights.get(codice, 0)
@@ -1325,7 +1301,7 @@ elif st.session_state.page == 3 and not st.session_state.submitted:
             use_container_width=True,
         ):
 
-            sincronizza_weights()
+            sync_weights()
             go_to(2)
 
     with col2:
@@ -1336,7 +1312,7 @@ elif st.session_state.page == 3 and not st.session_state.submitted:
             use_container_width=True,
         ):
 
-            sincronizza_weights()
+            sync_weights()
 
             missing_weights = [
                 codice
@@ -1379,8 +1355,9 @@ elif st.session_state.page == 3 and not st.session_state.submitted:
 
 elif st.session_state.page == 4 and not st.session_state.submitted:
 
-    sincronizza_ratings()
-    sincronizza_weights()
+    # Sincronizzazione preventiva dei dati
+    sync_ratings()
+    sync_weights()
 
     section_header(
         "05 · REVISIONE",
@@ -1427,15 +1404,18 @@ elif st.session_state.page == 4 and not st.session_state.submitted:
     for codice, kpi in KPIS.items():
 
         weight = st.session_state.weights.get(
-            codice,
-            0,
+            codice
         )
 
-        final_total += weight
+        if weight is None:
+            weight_text = "Non compilato"
+        else:
+            weight_text = f"{weight} punti"
+            final_total += weight
 
         st.write(
             f"**{codice} · {kpi['short']}** — "
-            f"**{weight} punti**"
+            f"**{weight_text}**"
         )
 
     if final_total == 100:
@@ -1487,24 +1467,25 @@ elif st.session_state.page == 4 and not st.session_state.submitted:
             "Invia valutazione",
             type="primary",
             use_container_width=True,
-            disabled=st.session_state.invio_in_corso,
         ):
 
-            sincronizza_ratings()
-            sincronizza_weights()
+            # Sincronizzazione finale prima del controllo
+            sync_ratings()
+            sync_weights()
 
+            # Verifica dei rating
             ratings_complete = all(
                 st.session_state.ratings.get(codice) in LIKERT
                 for codice in KPIS
             )
 
-           weights_complete = all(
-               codice in st.session_state.weights
-               and st.session_state.weights[codice] is not None
-               for codice in KPIS
+            # Verifica dei pesi
+            weights_complete = all(
+                st.session_state.weights.get(codice) is not None
+                for codice in KPIS
             )
 
-
+            # Totale finale dei pesi
             final_total = sum(
                 st.session_state.weights.get(codice, 0)
                 for codice in KPIS
@@ -1533,20 +1514,15 @@ elif st.session_state.page == 4 and not st.session_state.submitted:
 
             else:
 
-                st.session_state.invio_in_corso = True
-
                 try:
 
                     salva_risposta()
 
                     st.session_state.submitted = True
-                    st.session_state.invio_in_corso = False
 
                     st.rerun()
 
                 except Exception as e:
-
-                    st.session_state.invio_in_corso = False
 
                     st.error(
                         "Non è stato possibile registrare la risposta. "

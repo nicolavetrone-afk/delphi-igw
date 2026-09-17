@@ -14,10 +14,6 @@ st.set_page_config(
 )
 
 
-# ============================================================
-# SUPABASE
-# ============================================================
-
 @st.cache_resource
 def get_supabase():
     return create_client(
@@ -44,7 +40,6 @@ KPIS = {
             "emissiva dell'impresa è migliorata o peggiorata nel tempo."
         ),
     },
-
     "E2": {
         "area": "ENVIRONMENTAL",
         "nome": "Tasso di efficacia idrica",
@@ -55,7 +50,6 @@ KPIS = {
             "peggioramento dell'impresa nella gestione della risorsa idrica."
         ),
     },
-
     "E3": {
         "area": "ENVIRONMENTAL",
         "nome": "Quota di energia rinnovabile",
@@ -65,7 +59,6 @@ KPIS = {
             "dell'impresa coperta da energia proveniente da fonti rinnovabili."
         ),
     },
-
     "E4": {
         "area": "ENVIRONMENTAL",
         "nome": "Tasso di circolarità dei rifiuti",
@@ -76,7 +69,6 @@ KPIS = {
             "smaltimento."
         ),
     },
-
     "E5": {
         "area": "SUPPLY CHAIN ESG",
         "nome": "Copertura della valutazione di sostenibilità/ESG dei fornitori",
@@ -89,7 +81,6 @@ KPIS = {
             "di fornitura."
         ),
     },
-
     "S1": {
         "area": "SOCIAL",
         "nome": "Ore medie di formazione per dipendente",
@@ -100,7 +91,6 @@ KPIS = {
             "e nell'aggiornamento delle competenze del personale."
         ),
     },
-
     "GS2": {
         "area": "SOCIAL",
         "nome": "Rappresentanza femminile nella workforce",
@@ -126,7 +116,6 @@ LIKERT = {
     5: "Estremamente rilevante",
 }
 
-
 FAMILIARITA = {
     1: "Molto bassa",
     2: "Bassa",
@@ -134,39 +123,6 @@ FAMILIARITA = {
     4: "Elevata",
     5: "Molto elevata",
 }
-
-
-AMBITI_OPTIONS = [
-    "Sustainability / ESG",
-    "Environmental Sustainability",
-    "Social Sustainability",
-    "ESG / Sustainability Reporting",
-    "Sustainable Finance",
-    "Sustainable Supply Chain / Procurement",
-    "Corporate Governance",
-    "Automotive / Mobility",
-    "Ricerca accademica",
-    "Altro",
-]
-
-
-ANNI_OPTIONS = [
-    "Selezionare...",
-    "Meno di 2 anni",
-    "2–5 anni",
-    "6–10 anni",
-    "11–15 anni",
-    "Oltre 15 anni",
-]
-
-
-AUTOMOTIVE_OPTIONS = [
-    "Selezionare...",
-    "Esperienza professionale diretta",
-    "Conoscenza professionale o accademica",
-    "Conoscenza generale",
-    "Nessuna esperienza specifica",
-]
 
 
 # ============================================================
@@ -304,7 +260,7 @@ h1, h2, h3 {
 }
 
 
-/* SEZIONI */
+/* TITOLI SEZIONE */
 
 .section-code {
     color: #176D59 !important;
@@ -367,7 +323,7 @@ h1, h2, h3 {
 }
 
 
-/* SCALE */
+/* SCALA */
 
 .scale-card {
     background: #FFFFFF;
@@ -664,30 +620,20 @@ st.markdown(CSS, unsafe_allow_html=True)
 # SESSION STATE
 # ============================================================
 
-DEFAULTS = {
-    "page": 0,
-    "submitted": False,
-    "submitting": False,
-    "ratings": {},
-    "weights": {},
-    "profilo": {
-        "ambiti": [],
-        "anni_esperienza": "",
-        "familiarita_esg": None,
-        "esperienza_automotive": "",
-    },
-    "commento_salvato": "",
-}
+if "page" not in st.session_state:
+    st.session_state.page = 0
 
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
 
-for key, value in DEFAULTS.items():
-    if key not in st.session_state:
-        if isinstance(value, dict):
-            st.session_state[key] = value.copy()
-        elif isinstance(value, list):
-            st.session_state[key] = value.copy()
-        else:
-            st.session_state[key] = value
+if "ratings" not in st.session_state:
+    st.session_state.ratings = {}
+
+if "weights" not in st.session_state:
+    st.session_state.weights = {}
+
+if "sending" not in st.session_state:
+    st.session_state.sending = False
 
 
 # ============================================================
@@ -704,18 +650,15 @@ def show_error(message):
 
 
 def section_header(code, title, description):
-    st.markdown(
-        (
-            f'<div class="section-code">{code}</div>'
-            f'<div class="section-heading">{title}</div>'
-            f'<div class="section-description">{description}</div>'
-        ),
-        unsafe_allow_html=True,
+    html = (
+        f'<div class="section-code">{code}</div>'
+        f'<div class="section-heading">{title}</div>'
+        f'<div class="section-description">{description}</div>'
     )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def show_progress(current):
-
     labels = [
         "INTRODUZIONE",
         "PROFILO",
@@ -725,11 +668,9 @@ def show_progress(current):
     ]
 
     st.markdown(
-        (
-            '<div class="progress-label">'
-            f'STEP {current + 1} DI 5 · {labels[current]}'
-            '</div>'
-        ),
+        '<div class="progress-label">'
+        f'STEP {current + 1} DI 5 · {labels[current]}'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -745,41 +686,31 @@ def show_progress(current):
         bars += f'<div class="{css_class}"></div>'
 
     st.markdown(
-        f'<div class="progress-wrapper">{bars}</div>',
+        '<div class="progress-wrapper">'
+        + bars
+        + '</div>',
         unsafe_allow_html=True,
     )
 
 
-def salva_profilo():
+def save_rating(codice):
+    widget_key = f"rating_widget_{codice}"
+    value = st.session_state.get(widget_key)
 
-    st.session_state.profilo = {
-        "ambiti": list(
-            st.session_state.get(
-                "profilo_ambiti",
-                []
-            )
-        ),
-
-        "anni_esperienza": st.session_state.get(
-            "profilo_anni",
-            "Selezionare...",
-        ),
-
-        "familiarita_esg": st.session_state.get(
-            "profilo_familiarita"
-        ),
-
-        "esperienza_automotive": st.session_state.get(
-            "profilo_automotive",
-            "Selezionare...",
-        ),
-    }
+    if value is not None:
+        st.session_state.ratings[codice] = int(value)
 
 
-def salva_ratings():
+def save_weight(codice):
+    widget_key = f"weight_widget_{codice}"
+    value = st.session_state.get(widget_key)
 
+    if value is not None:
+        st.session_state.weights[codice] = int(value)
+
+
+def sync_ratings():
     for codice in KPIS:
-
         value = st.session_state.get(
             f"rating_widget_{codice}"
         )
@@ -788,10 +719,8 @@ def salva_ratings():
             st.session_state.ratings[codice] = int(value)
 
 
-def salva_pesi():
-
+def sync_weights():
     for codice in KPIS:
-
         value = st.session_state.get(
             f"weight_widget_{codice}"
         )
@@ -799,35 +728,26 @@ def salva_pesi():
         if value is not None:
             st.session_state.weights[codice] = int(value)
 
-    st.session_state.commento_salvato = (
-        st.session_state.get(
-            "commento_widget",
-            st.session_state.commento_salvato,
-        )
-        or ""
-    )
 
+def salva_risposta():
 
-def costruisci_risposta():
+    # Sincronizzazione finale
+    sync_ratings()
+    sync_weights()
 
-    profilo = st.session_state.profilo
-
-    return {
+    data = {
         "ambiti": "; ".join(
-            profilo.get("ambiti", [])
+            st.session_state.get("ambiti", [])
         ),
-
-        "anni_esperienza": profilo.get(
-            "anni_esperienza",
+        "anni_esperienza": st.session_state.get(
+            "anni",
             "",
         ),
-
-        "familiarita_esg": profilo.get(
-            "familiarita_esg"
+        "familiarita_esg": st.session_state.get(
+            "familiarita"
         ),
-
-        "esperienza_automotive": profilo.get(
-            "esperienza_automotive",
+        "esperienza_automotive": st.session_state.get(
+            "automotive",
             "",
         ),
 
@@ -847,117 +767,19 @@ def costruisci_risposta():
         "weight_s1": st.session_state.weights.get("S1"),
         "weight_gs2": st.session_state.weights.get("GS2"),
 
-        "commento": st.session_state.commento_salvato,
+        "commento": st.session_state.get(
+            "commento",
+            "",
+        ),
     }
 
-
-def valida_tutto():
-
-    profilo = st.session_state.profilo
-
-    if not profilo.get("ambiti"):
-        return False, "Manca l'ambito di competenza."
-
-    if profilo.get("anni_esperienza") in [
-        "",
-        None,
-        "Selezionare...",
-    ]:
-        return False, "Mancano gli anni di esperienza."
-
-    if profilo.get("familiarita_esg") not in FAMILIARITA:
-        return False, "Manca il livello di familiarità ESG."
-
-    if profilo.get("esperienza_automotive") in [
-        "",
-        None,
-        "Selezionare...",
-    ]:
-        return False, "Manca l'esperienza nel settore automotive."
-
-    for codice in KPIS:
-
-        if st.session_state.ratings.get(codice) not in LIKERT:
-            return (
-                False,
-                f"Manca la valutazione di rilevanza per {codice}.",
-            )
-
-    for codice in KPIS:
-
-        if codice not in st.session_state.weights:
-            return (
-                False,
-                f"Manca il peso attribuito a {codice}.",
-            )
-
-        if st.session_state.weights[codice] is None:
-            return (
-                False,
-                f"Manca il peso attribuito a {codice}.",
-            )
-
-    totale = sum(
-        int(st.session_state.weights[codice])
-        for codice in KPIS
+    return (
+        supabase
+        .table("delphi_responses")
+        .insert(data)
+        .execute()
     )
 
-    if totale != 100:
-        return (
-            False,
-            f"La somma dei pesi è {totale}. Deve essere esattamente 100.",
-        )
-
-    return True, ""
-
-
-def invia_risposta():
-
-    if st.session_state.submitted:
-        return
-
-    if st.session_state.submitting:
-        return
-
-    valido, errore = valida_tutto()
-
-    if not valido:
-        show_error(errore)
-        return
-
-    st.session_state.submitting = True
-
-    try:
-
-        data = costruisci_risposta()
-
-        supabase.table(
-            "delphi_responses"
-        ).insert(
-            data
-        ).execute()
-
-        st.session_state.submitted = True
-        st.session_state.submitting = False
-
-        st.rerun()
-
-    except Exception as e:
-
-        st.session_state.submitting = False
-
-        st.error(
-            "Non è stato possibile registrare la risposta. "
-            "La valutazione non è stata inviata. "
-            "Le risposte inserite non sono state cancellate."
-        )
-
-        st.exception(e)
-
-
-# ============================================================
-# HERO
-# ============================================================
 
 # ============================================================
 # HERO
@@ -996,10 +818,7 @@ if not st.session_state.submitted:
 # STEP 1 — INTRODUZIONE
 # ============================================================
 
-if (
-    st.session_state.page == 0
-    and not st.session_state.submitted
-):
+if st.session_state.page == 0 and not st.session_state.submitted:
 
     section_header(
         "01 · INTRODUZIONE",
@@ -1009,54 +828,45 @@ if (
     )
 
     st.markdown(
-        """
-Gentile Esperto/a,
+        "Gentile Esperto/a,\n\n"
+        "il presente questionario è parte di una **ricerca accademica** "
+        "finalizzata allo sviluppo di un modello quantitativo per "
+        "l'analisi della sostenibilità aziendale nel **settore automotive**.\n\n"
+        "Nell'ambito della ricerca sono stati individuati **sette Key "
+        "Performance Indicators (KPI)** relativi a differenti dimensioni "
+        "della sostenibilità.\n\n"
+        "L'obiettivo della consultazione è supportare la definizione dei "
+        "**pesi da attribuire ai sette KPI**, sulla base del giudizio di "
+        "un panel di esperti in sostenibilità, ESG e ambiti correlati.\n\n"
+        "La consultazione segue un'impostazione **Delphi**. In questo primo "
+        "round Le viene richiesto di formulare una valutazione individuale "
+        "e indipendente. Le risposte saranno successivamente elaborate "
+        "in forma aggregata.\n\n"
+        "**Non esistono risposte corrette o errate:** ciò che interessa "
+        "è il Suo giudizio professionale."
+    )
 
-il presente questionario è parte di una **ricerca accademica**
-finalizzata allo sviluppo di un modello quantitativo per
-l'analisi della sostenibilità aziendale nel **settore automotive**.
-
-Nell'ambito della ricerca sono stati individuati **sette Key
-Performance Indicators (KPI)** relativi a differenti dimensioni
-della sostenibilità.
-
-L'obiettivo della consultazione è supportare la definizione dei
-**pesi da attribuire ai sette KPI**, sulla base del giudizio di
-un panel di esperti in sostenibilità, ESG e ambiti correlati.
-
-La consultazione segue un'impostazione **Delphi**. In questo primo
-round Le viene richiesto di formulare una valutazione individuale
-e indipendente. Le risposte saranno successivamente elaborate
-in forma aggregata.
-
-**Non esistono risposte corrette o errate:** ciò che interessa
-è il Suo giudizio professionale.
-        """
+    info_html = (
+        '<div class="info-panel">'
+        '<div class="info-grid">'
+        '<div>'
+        '<div class="info-value">5–7</div>'
+        '<div class="info-label">MINUTI STIMATI</div>'
+        '</div>'
+        '<div>'
+        '<div class="info-value">7</div>'
+        '<div class="info-label">KPI DA VALUTARE</div>'
+        '</div>'
+        '<div>'
+        '<div class="info-value">1–5</div>'
+        '<div class="info-label">SCALA DI RILEVANZA</div>'
+        '</div>'
+        '</div>'
+        '</div>'
     )
 
     st.markdown(
-        """
-        <div class="info-panel">
-            <div class="info-grid">
-
-                <div>
-                    <div class="info-value">5–7</div>
-                    <div class="info-label">MINUTI STIMATI</div>
-                </div>
-
-                <div>
-                    <div class="info-value">7</div>
-                    <div class="info-label">KPI DA VALUTARE</div>
-                </div>
-
-                <div>
-                    <div class="info-value">1–5</div>
-                    <div class="info-label">SCALA DI RILEVANZA</div>
-                </div>
-
-            </div>
-        </div>
-        """,
+        info_html,
         unsafe_allow_html=True,
     )
 
@@ -1075,14 +885,11 @@ in forma aggregata.
     ):
 
         if not consenso:
-
             show_error(
-                "Per proseguire è necessario confermare "
-                "la partecipazione."
+                "Per proseguire è necessario "
+                "confermare la partecipazione."
             )
-
         else:
-
             go_to(1)
 
 
@@ -1090,10 +897,7 @@ in forma aggregata.
 # STEP 2 — PROFILO
 # ============================================================
 
-elif (
-    st.session_state.page == 1
-    and not st.session_state.submitted
-):
+elif st.session_state.page == 1 and not st.session_state.submitted:
 
     section_header(
         "02 · PROFILO",
@@ -1106,75 +910,57 @@ elif (
         "* Tutte le domande di questa sezione sono obbligatorie."
     )
 
-    profilo = st.session_state.profilo
-
-    if "profilo_ambiti" not in st.session_state:
-        st.session_state.profilo_ambiti = profilo.get(
-            "ambiti",
-            [],
-        )
-
-    if "profilo_anni" not in st.session_state:
-
-        valore_anni = profilo.get(
-            "anni_esperienza",
-            "",
-        )
-
-        st.session_state.profilo_anni = (
-            valore_anni
-            if valore_anni in ANNI_OPTIONS
-            else "Selezionare..."
-        )
-
-    if "profilo_familiarita" not in st.session_state:
-
-        st.session_state.profilo_familiarita = (
-            profilo.get("familiarita_esg")
-        )
-
-    if "profilo_automotive" not in st.session_state:
-
-        valore_auto = profilo.get(
-            "esperienza_automotive",
-            "",
-        )
-
-        st.session_state.profilo_automotive = (
-            valore_auto
-            if valore_auto in AUTOMOTIVE_OPTIONS
-            else "Selezionare..."
-        )
-
-    st.multiselect(
+    ambiti = st.multiselect(
         "Ambito/i principale/i di competenza *",
-        AMBITI_OPTIONS,
-        key="profilo_ambiti",
+        [
+            "Sustainability / ESG",
+            "Environmental Sustainability",
+            "Social Sustainability",
+            "ESG / Sustainability Reporting",
+            "Sustainable Finance",
+            "Sustainable Supply Chain / Procurement",
+            "Corporate Governance",
+            "Automotive / Mobility",
+            "Ricerca accademica",
+            "Altro",
+        ],
+        key="ambiti",
     )
 
-    st.selectbox(
+    anni = st.selectbox(
         "Anni di esperienza professionale o accademica "
         "in sostenibilità/ESG o ambiti correlati *",
-        ANNI_OPTIONS,
-        key="profilo_anni",
+        [
+            "Selezionare...",
+            "Meno di 2 anni",
+            "2–5 anni",
+            "6–10 anni",
+            "11–15 anni",
+            "Oltre 15 anni",
+        ],
+        key="anni",
     )
 
-    st.radio(
+    familiarita = st.radio(
         "Livello di familiarità con la misurazione "
         "delle performance ESG/sostenibilità *",
         options=[1, 2, 3, 4, 5],
         index=None,
         horizontal=True,
-        format_func=lambda x: (
-            f"{x} · {FAMILIARITA[x]}"
-        ),
-        key="profilo_familiarita",
+        format_func=lambda x: f"{x} · {FAMILIARITA[x]}",
+        key="familiarita",
     )
 
-    st.selectbox(
+    automotive = st.selectbox(
         "Esperienza o conoscenza del settore automotive *",
-        AUTOMOTIVE_OPTIONS,
-        key="profilo_automotive",
+        [
+            "Selezionare...",
+            "Esperienza professionale diretta",
+            "Conoscenza professionale o accademica",
+            "Conoscenza generale",
+            "Nessuna esperienza specifica",
+        ],
+        key="automotive",
     )
 
     col1, col2 = st.columns(2)
@@ -1185,8 +971,6 @@ elif (
             "← Indietro",
             use_container_width=True,
         ):
-
-            salva_profilo()
             go_to(0)
 
     with col2:
@@ -1197,45 +981,35 @@ elif (
             use_container_width=True,
         ):
 
-            salva_profilo()
-
-            profilo = st.session_state.profilo
-
             errors = []
 
-            if not profilo["ambiti"]:
+            if not ambiti:
                 errors.append(
                     "selezionare almeno un ambito di competenza"
                 )
 
-            if profilo["anni_esperienza"] == "Selezionare...":
+            if anni == "Selezionare...":
                 errors.append(
                     "indicare gli anni di esperienza"
                 )
 
-            if profilo["familiarita_esg"] not in FAMILIARITA:
+            if familiarita is None:
                 errors.append(
                     "indicare il livello di familiarità ESG"
                 )
 
-            if (
-                profilo["esperienza_automotive"]
-                == "Selezionare..."
-            ):
+            if automotive == "Selezionare...":
                 errors.append(
                     "indicare la conoscenza del settore automotive"
                 )
 
             if errors:
-
                 show_error(
                     "Per continuare è necessario "
                     + "; ".join(errors)
                     + "."
                 )
-
             else:
-
                 go_to(2)
 
 
@@ -1243,10 +1017,7 @@ elif (
 # STEP 3 — VALUTAZIONE KPI
 # ============================================================
 
-elif (
-    st.session_state.page == 2
-    and not st.session_state.submitted
-):
+elif st.session_state.page == 2 and not st.session_state.submitted:
 
     section_header(
         "03 · VALUTAZIONE",
@@ -1261,37 +1032,33 @@ elif (
         "**scala di rilevanza a 5 punti**."
     )
 
+    scale_html = (
+        '<div class="scale-card">'
+        '<div class="scale-row">'
+        '<div class="scale-number">1</div>'
+        '<div class="scale-text">Per nulla rilevante</div>'
+        '</div>'
+        '<div class="scale-row">'
+        '<div class="scale-number">2</div>'
+        '<div class="scale-text">Poco rilevante</div>'
+        '</div>'
+        '<div class="scale-row">'
+        '<div class="scale-number">3</div>'
+        '<div class="scale-text">Moderatamente rilevante</div>'
+        '</div>'
+        '<div class="scale-row">'
+        '<div class="scale-number">4</div>'
+        '<div class="scale-text">Molto rilevante</div>'
+        '</div>'
+        '<div class="scale-row">'
+        '<div class="scale-number">5</div>'
+        '<div class="scale-text">Estremamente rilevante</div>'
+        '</div>'
+        '</div>'
+    )
+
     st.markdown(
-        """
-        <div class="scale-card">
-
-            <div class="scale-row">
-                <div class="scale-number">1</div>
-                <div class="scale-text">Per nulla rilevante</div>
-            </div>
-
-            <div class="scale-row">
-                <div class="scale-number">2</div>
-                <div class="scale-text">Poco rilevante</div>
-            </div>
-
-            <div class="scale-row">
-                <div class="scale-number">3</div>
-                <div class="scale-text">Moderatamente rilevante</div>
-            </div>
-
-            <div class="scale-row">
-                <div class="scale-number">4</div>
-                <div class="scale-text">Molto rilevante</div>
-            </div>
-
-            <div class="scale-row">
-                <div class="scale-number">5</div>
-                <div class="scale-text">Estremamente rilevante</div>
-            </div>
-
-        </div>
-        """,
+        scale_html,
         unsafe_allow_html=True,
     )
 
@@ -1302,28 +1069,27 @@ elif (
 
     for codice, kpi in KPIS.items():
 
+        kpi_html = (
+            '<div class="kpi-card">'
+            f'<div class="kpi-tag">{codice} · {kpi["area"]}</div>'
+            f'<div class="kpi-name">{kpi["nome"]}</div>'
+            f'<div class="kpi-description">{kpi["descrizione"]}</div>'
+            '</div>'
+        )
+
         st.markdown(
-            (
-                '<div class="kpi-card">'
-                f'<div class="kpi-tag">'
-                f'{codice} · {kpi["area"]}'
-                '</div>'
-                f'<div class="kpi-name">'
-                f'{kpi["nome"]}'
-                '</div>'
-                f'<div class="kpi-description">'
-                f'{kpi["descrizione"]}'
-                '</div>'
-                '</div>'
-            ),
+            kpi_html,
             unsafe_allow_html=True,
         )
 
         widget_key = f"rating_widget_{codice}"
 
-        if widget_key not in st.session_state:
+        if (
+            widget_key not in st.session_state
+            and codice in st.session_state.ratings
+        ):
             st.session_state[widget_key] = (
-                st.session_state.ratings.get(codice)
+                st.session_state.ratings[codice]
             )
 
         st.radio(
@@ -1331,10 +1097,10 @@ elif (
             options=[1, 2, 3, 4, 5],
             index=None,
             horizontal=True,
-            format_func=lambda x: (
-                f"{x} · {LIKERT[x]}"
-            ),
+            format_func=lambda x: f"{x} · {LIKERT[x]}",
             key=widget_key,
+            on_change=save_rating,
+            args=(codice,),
         )
 
     col1, col2 = st.columns(2)
@@ -1345,8 +1111,7 @@ elif (
             "← Indietro",
             use_container_width=True,
         ):
-
-            salva_ratings()
+            sync_ratings()
             go_to(1)
 
     with col2:
@@ -1357,26 +1122,22 @@ elif (
             use_container_width=True,
         ):
 
-            salva_ratings()
+            sync_ratings()
 
             missing = [
                 codice
                 for codice in KPIS
-                if st.session_state.ratings.get(codice)
-                not in LIKERT
+                if st.session_state.ratings.get(codice) not in LIKERT
             ]
 
             if missing:
-
                 show_error(
                     "È necessario valutare tutti i KPI. "
                     "Mancano: "
                     + ", ".join(missing)
                     + "."
                 )
-
             else:
-
                 go_to(3)
 
 
@@ -1384,10 +1145,7 @@ elif (
 # STEP 4 — PONDERAZIONE
 # ============================================================
 
-elif (
-    st.session_state.page == 3
-    and not st.session_state.submitted
-):
+elif st.session_state.page == 3 and not st.session_state.submitted:
 
     section_header(
         "04 · PONDERAZIONE",
@@ -1397,22 +1155,21 @@ elif (
         "dell'indice complessivo.",
     )
 
+    weight_info_html = (
+        '<div class="info-panel">'
+        'Distribuisca <strong>100 punti complessivi</strong> '
+        'tra i sette KPI. Un numero maggiore di punti indica '
+        'che, secondo il Suo giudizio, quel KPI dovrebbe avere '
+        'un peso maggiore nella valutazione complessiva della '
+        'performance di sostenibilità.'
+        '<br><br>'
+        '<strong>La somma finale deve essere esattamente '
+        'pari a 100.</strong>'
+        '</div>'
+    )
+
     st.markdown(
-        """
-        <div class="info-panel">
-            Distribuisca <strong>100 punti complessivi</strong>
-            tra i sette KPI. Un numero maggiore di punti indica
-            che, secondo il Suo giudizio, quel KPI dovrebbe avere
-            un peso maggiore nella valutazione complessiva della
-            performance di sostenibilità.
-
-            <br><br>
-
-            <strong>
-                La somma finale deve essere esattamente pari a 100.
-            </strong>
-        </div>
-        """,
+        weight_info_html,
         unsafe_allow_html=True,
     )
 
@@ -1426,57 +1183,53 @@ elif (
                 f"**{codice} · {kpi['short']}**"
             )
 
-            st.caption(kpi["nome"])
+            st.caption(
+                kpi["nome"]
+            )
 
         with col_value:
 
             widget_key = f"weight_widget_{codice}"
 
             if widget_key not in st.session_state:
-
-                valore_salvato = (
-                    st.session_state.weights.get(codice)
-                )
-
-                st.session_state[widget_key] = valore_salvato
+                if codice in st.session_state.weights:
+                    st.session_state[widget_key] = (
+                        st.session_state.weights[codice]
+                    )
+                else:
+                    st.session_state[widget_key] = 0
 
             st.number_input(
                 f"Punti {codice}",
                 min_value=0,
                 max_value=100,
-                value=None,
                 step=1,
-                placeholder="0",
                 key=widget_key,
                 label_visibility="collapsed",
+                on_change=save_weight,
+                args=(codice,),
             )
 
-    # Leggiamo direttamente i widget correnti.
-    valori_correnti = {
-        codice: st.session_state.get(
-            f"weight_widget_{codice}"
-        )
-        for codice in KPIS
-    }
+    sync_weights()
 
     total = sum(
-        value if value is not None else 0
-        for value in valori_correnti.values()
+        st.session_state.weights.get(codice, 0)
+        for codice in KPIS
     )
 
     if total == 100:
 
+        total_html = (
+            '<div class="total-panel">'
+            '<div class="total-number">100 / 100 ✓</div>'
+            '<div class="total-caption">'
+            'Distribuzione completata correttamente'
+            '</div>'
+            '</div>'
+        )
+
         st.markdown(
-            """
-            <div class="total-panel">
-                <div class="total-number">
-                    100 / 100 ✓
-                </div>
-                <div class="total-caption">
-                    Distribuzione completata correttamente
-                </div>
-            </div>
-            """,
+            total_html,
             unsafe_allow_html=True,
         )
 
@@ -1484,17 +1237,17 @@ elif (
 
         remaining = 100 - total
 
+        total_html = (
+            '<div class="total-panel">'
+            f'<div class="total-number">{total} / 100</div>'
+            '<div class="total-caption">'
+            f'Restano da assegnare {remaining} punti'
+            '</div>'
+            '</div>'
+        )
+
         st.markdown(
-            (
-                '<div class="total-panel">'
-                f'<div class="total-number">'
-                f'{total} / 100'
-                '</div>'
-                '<div class="total-caption">'
-                f'Restano da assegnare {remaining} punti'
-                '</div>'
-                '</div>'
-            ),
+            total_html,
             unsafe_allow_html=True,
         )
 
@@ -1507,11 +1260,6 @@ elif (
 
     st.markdown("### Motivazione e osservazioni")
 
-    if "commento_widget" not in st.session_state:
-        st.session_state.commento_widget = (
-            st.session_state.commento_salvato
-        )
-
     st.text_area(
         "Se lo desidera, può motivare brevemente i pesi attribuiti "
         "o aggiungere osservazioni utili ai fini della ricerca.",
@@ -1521,7 +1269,7 @@ elif (
             "sulla rilevanza degli indicatori..."
         ),
         height=145,
-        key="commento_widget",
+        key="commento",
     )
 
     st.caption("Campo facoltativo.")
@@ -1534,8 +1282,7 @@ elif (
             "← Indietro",
             use_container_width=True,
         ):
-
-            salva_pesi()
+            sync_weights()
             go_to(2)
 
     with col2:
@@ -1546,34 +1293,14 @@ elif (
             use_container_width=True,
         ):
 
-            salva_pesi()
-
-            missing_weights = [
-                codice
-                for codice in KPIS
-                if st.session_state.get(
-                    f"weight_widget_{codice}"
-                ) is None
-            ]
+            sync_weights()
 
             final_total = sum(
-                st.session_state.weights.get(
-                    codice,
-                    0,
-                )
+                st.session_state.weights.get(codice, 0)
                 for codice in KPIS
             )
 
-            if missing_weights:
-
-                show_error(
-                    "È necessario attribuire un valore "
-                    "a tutti i sette KPI. Mancano: "
-                    + ", ".join(missing_weights)
-                    + "."
-                )
-
-            elif final_total != 100:
+            if final_total != 100:
 
                 show_error(
                     "La somma dei pesi deve essere "
@@ -1589,10 +1316,10 @@ elif (
 # STEP 5 — REVISIONE
 # ============================================================
 
-elif (
-    st.session_state.page == 4
-    and not st.session_state.submitted
-):
+elif st.session_state.page == 4 and not st.session_state.submitted:
+
+    sync_ratings()
+    sync_weights()
 
     section_header(
         "05 · REVISIONE",
@@ -1601,56 +1328,33 @@ elif (
         "È ancora possibile tornare indietro e modificarle.",
     )
 
-    # --------------------------------------------------------
-    # PROFILO
-    # --------------------------------------------------------
-
     st.markdown("### Profilo dell'esperto")
 
-    profilo = st.session_state.profilo
+    ambiti_review = st.session_state.get("ambiti", [])
+    anni_review = st.session_state.get("anni", "")
+    familiarita_review = st.session_state.get("familiarita")
+    automotive_review = st.session_state.get("automotive", "")
 
-    st.write(
-        "**Ambito/i di competenza:** "
-        + ", ".join(profilo.get("ambiti", []))
-    )
-
-    st.write(
-        "**Anni di esperienza:** "
-        + str(
-            profilo.get(
-                "anni_esperienza",
-                "",
-            )
+    if ambiti_review:
+        st.write(
+            "**Ambito/i di competenza:** "
+            + ", ".join(ambiti_review)
         )
+
+    st.write(
+        f"**Anni di esperienza:** {anni_review}"
     )
 
-    familiarita_value = profilo.get(
-        "familiarita_esg"
-    )
-
-    if familiarita_value in FAMILIARITA:
-
+    if familiarita_review in FAMILIARITA:
         st.write(
             "**Familiarità ESG:** "
-            f"{familiarita_value} / 5 · "
-            f"{FAMILIARITA[familiarita_value]}"
+            f"{familiarita_review} · "
+            f"{FAMILIARITA[familiarita_review]}"
         )
 
     st.write(
-        "**Esperienza/conoscenza automotive:** "
-        + str(
-            profilo.get(
-                "esperienza_automotive",
-                "",
-            )
-        )
+        f"**Esperienza automotive:** {automotive_review}"
     )
-
-    st.divider()
-
-    # --------------------------------------------------------
-    # RATING
-    # --------------------------------------------------------
 
     st.markdown("### Rilevanza dei KPI")
 
@@ -1659,35 +1363,26 @@ elif (
         score = st.session_state.ratings.get(codice)
 
         if score in LIKERT:
-
             score_text = f"{score} / 5"
             label_text = LIKERT[score]
-
         else:
-
             score_text = "Non compilato"
             label_text = "Valutazione mancante"
 
-        st.markdown(
-            (
-                '<div class="review-card">'
-                f'<div class="review-name">'
-                f'{codice} · {kpi["short"]}'
-                '</div>'
-                f'<div class="review-score">'
-                f'{score_text}'
-                '</div>'
-                f'<div class="review-label">'
-                f'{label_text}'
-                '</div>'
-                '</div>'
-            ),
-            unsafe_allow_html=True,
+        review_html = (
+            '<div class="review-card">'
+            f'<div class="review-name">'
+            f'{codice} · {kpi["short"]}'
+            '</div>'
+            f'<div class="review-score">{score_text}</div>'
+            f'<div class="review-label">{label_text}</div>'
+            '</div>'
         )
 
-    # --------------------------------------------------------
-    # PESI
-    # --------------------------------------------------------
+        st.markdown(
+            review_html,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("### Pesi attribuiti")
 
@@ -1696,22 +1391,15 @@ elif (
     for codice, kpi in KPIS.items():
 
         weight = st.session_state.weights.get(
-            codice
+            codice,
+            0,
         )
 
-        if weight is None:
-
-            weight_text = "Non compilato"
-
-        else:
-
-            weight = int(weight)
-            weight_text = f"{weight} punti"
-            final_total += weight
+        final_total += weight
 
         st.write(
             f"**{codice} · {kpi['short']}** — "
-            f"**{weight_text}**"
+            f"**{weight} punti**"
         )
 
     if final_total == 100:
@@ -1726,19 +1414,18 @@ elif (
             f"Totale attribuito: {final_total} / 100"
         )
 
-    # --------------------------------------------------------
-    # COMMENTO
-    # --------------------------------------------------------
+    comment = st.session_state.get(
+        "commento",
+        "",
+    )
 
-    if st.session_state.commento_salvato:
+    if comment:
 
         st.markdown(
             "### Motivazione / osservazioni"
         )
 
-        st.write(
-            st.session_state.commento_salvato
-        )
+        st.write(comment)
 
     st.divider()
 
@@ -1755,7 +1442,6 @@ elif (
             "← Modifica risposte",
             use_container_width=True,
         ):
-
             go_to(3)
 
     with col2:
@@ -1764,10 +1450,117 @@ elif (
             "Invia valutazione",
             type="primary",
             use_container_width=True,
-            disabled=st.session_state.submitting,
+            disabled=st.session_state.sending,
         ):
 
-            invia_risposta()
+            # ----------------------------------------------
+            # SINCRONIZZAZIONE
+            # ----------------------------------------------
+
+            sync_ratings()
+            sync_weights()
+
+            # ----------------------------------------------
+            # CONTROLLO PROFILO
+            # ----------------------------------------------
+
+            profile_complete = (
+                bool(st.session_state.get("ambiti"))
+                and st.session_state.get("anni")
+                not in (None, "", "Selezionare...")
+                and st.session_state.get("familiarita")
+                in FAMILIARITA
+                and st.session_state.get("automotive")
+                not in (None, "", "Selezionare...")
+            )
+
+            # ----------------------------------------------
+            # CONTROLLO RATING
+            # ----------------------------------------------
+
+            ratings_complete = all(
+                st.session_state.ratings.get(codice) in LIKERT
+                for codice in KPIS
+            )
+
+            # ----------------------------------------------
+            # CONTROLLO PESI
+            # ----------------------------------------------
+
+            weights_complete = all(
+                isinstance(
+                    st.session_state.weights.get(codice),
+                    int,
+                )
+                for codice in KPIS
+            )
+
+            final_total = sum(
+                st.session_state.weights.get(codice, 0)
+                for codice in KPIS
+            )
+
+            # ----------------------------------------------
+            # VALIDAZIONE
+            # ----------------------------------------------
+
+            if not profile_complete:
+
+                show_error(
+                    "I dati del profilo risultano incompleti. "
+                    "Torni alla sezione Profilo e verifichi "
+                    "le informazioni inserite."
+                )
+
+            elif not ratings_complete:
+
+                show_error(
+                    "Una o più valutazioni di rilevanza "
+                    "risultano mancanti."
+                )
+
+            elif not weights_complete:
+
+                show_error(
+                    "Uno o più pesi risultano mancanti."
+                )
+
+            elif final_total != 100:
+
+                show_error(
+                    "La somma dei pesi deve essere "
+                    "esattamente pari a 100."
+                )
+
+            else:
+
+                # ------------------------------------------
+                # INSERT SUPABASE
+                # SOLO QUI
+                # ------------------------------------------
+
+                st.session_state.sending = True
+
+                try:
+
+                    salva_risposta()
+
+                    st.session_state.submitted = True
+                    st.session_state.sending = False
+
+                    st.rerun()
+
+                except Exception as e:
+
+                    st.session_state.sending = False
+
+                    st.error(
+                        "Non è stato possibile registrare la risposta. "
+                        "La valutazione non è stata inviata. "
+                        "La preghiamo di riprovare."
+                    )
+
+                    st.exception(e)
 
 
 # ============================================================
@@ -1776,43 +1569,30 @@ elif (
 
 if st.session_state.submitted:
 
+    success_html = (
+        '<div class="success-card">'
+        '<div class="success-icon">✓</div>'
+        '<div class="section-code">'
+        'DELPHI STUDY · ROUND 1'
+        '</div>'
+        '<div class="success-title">'
+        'Grazie per il Suo contributo.'
+        '</div>'
+        '<div class="success-text">'
+        'La valutazione è stata completata correttamente.'
+        '<br><br>'
+        'Le risposte del panel saranno analizzate in forma aggregata. '
+        'I risultati del primo round saranno utilizzati per valutare '
+        'il grado di convergenza tra i giudizi degli esperti e per '
+        'la successiva definizione dei pesi degli indicatori.'
+        '</div>'
+        '<div class="success-badge">'
+        'ROUND 1 · COMPLETATO'
+        '</div>'
+        '</div>'
+    )
+
     st.markdown(
-        """
-        <div class="success-card">
-
-            <div class="success-icon">
-                ✓
-            </div>
-
-            <div class="section-code">
-                DELPHI STUDY · ROUND 1
-            </div>
-
-            <div class="success-title">
-                Grazie per il Suo contributo.
-            </div>
-
-            <div class="success-text">
-
-                La valutazione è stata completata
-                e registrata correttamente.
-
-                <br><br>
-
-                Le risposte del panel saranno analizzate
-                in forma aggregata. I risultati del primo
-                round saranno utilizzati per valutare il
-                grado di convergenza tra i giudizi degli
-                esperti e per la successiva definizione
-                dei pesi degli indicatori.
-
-            </div>
-
-            <div class="success-badge">
-                ROUND 1 · COMPLETATO
-            </div>
-
-        </div>
-        """,
+        success_html,
         unsafe_allow_html=True,
     )

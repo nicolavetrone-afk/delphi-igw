@@ -959,32 +959,33 @@ def invia_risposta():
 # HERO
 # ============================================================
 
+# ============================================================
+# HERO
+# ============================================================
+
 if not st.session_state.submitted:
 
+    hero_html = (
+        '<div class="hero">'
+        '<div class="hero-eyebrow">DELPHI STUDY · ROUND 1</div>'
+        '<div class="hero-title">'
+        'Ponderazione dei KPI<br>'
+        'di sostenibilità'
+        '</div>'
+        '<div class="hero-description">'
+        'Consultazione di esperti finalizzata alla definizione '
+        'dei pesi di un sistema multidimensionale di indicatori '
+        'di sostenibilità applicato al settore automotive.'
+        '</div>'
+        '</div>'
+        '<div class="academic-line">'
+        'Ricerca accademica · Sapienza Università di Roma · '
+        'Laurea Magistrale in Ingegneria Gestionale'
+        '</div>'
+    )
+
     st.markdown(
-        """
-        <div class="hero">
-            <div class="hero-eyebrow">
-                DELPHI STUDY · ROUND 1
-            </div>
-
-            <div class="hero-title">
-                Ponderazione dei KPI<br>
-                di sostenibilità
-            </div>
-
-            <div class="hero-description">
-                Consultazione di esperti finalizzata alla definizione
-                dei pesi di un sistema multidimensionale di indicatori
-                di sostenibilità applicato al settore automotive.
-            </div>
-        </div>
-
-        <div class="academic-line">
-            Ricerca accademica · Sapienza Università di Roma ·
-            Laurea Magistrale in Ingegneria Gestionale
-        </div>
-        """,
+        hero_html,
         unsafe_allow_html=True,
     )
 

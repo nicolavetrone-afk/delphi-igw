@@ -1498,12 +1498,12 @@ elif st.session_state.page == 4 and not st.session_state.submitted:
                 for codice in KPIS
             )
 
-            weights_complete = all(
-                st.session_state.get(
-                    f"weight_widget_{codice}"
-                ) is not None
-                for codice in KPIS
+           weights_complete = all(
+               codice in st.session_state.weights
+               and st.session_state.weights[codice] is not None
+               for codice in KPIS
             )
+
 
             final_total = sum(
                 st.session_state.weights.get(codice, 0)
